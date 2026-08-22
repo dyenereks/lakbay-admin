@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+:root {
+  --bg-white: #FFFFFF;
+  --bg-light: #F5F0E8;
+  --bg-dark: #2D2D3A;
+  --font-primary: #2D2D3A;
+  --font-secondary: #5A5A6A;
+  --font-muted: #8A8A9A;
+  --font-light: #FFFFFF;
+  --primary-teal: #D6246E;
+  --secondary-gold: #D4941A;
+  --border-light: #E8E0D8;
+  --accent-pink: #D6246E;
+  --accent-purple: #7B2FA0;
+  --accent-blue: #1565C0;
+  --accent-teal: #0EA5A5;
+  --accent-green: #78BE20;
+  --accent-orange: #E86B20;
+  --accent-gold: #D4941A;
+  --radius-full: 999px;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+}
+
+@theme inline {
+  --color-background: var(--bg-white);
+  --color-foreground: var(--font-primary);
+  --color-bg-light: var(--bg-light);
+  --color-bg-dark: var(--bg-dark);
+  --color-font-primary: var(--font-primary);
+  --color-font-secondary: var(--font-secondary);
+  --color-font-muted: var(--font-muted);
+  --color-font-light: var(--font-light);
+  --color-primary-teal: var(--primary-teal);
+  --color-secondary-gold: var(--secondary-gold);
+  --color-border-light: var(--border-light);
+  --color-accent-pink: var(--accent-pink);
+  --color-accent-purple: var(--accent-purple);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-teal: var(--accent-teal);
+  --color-accent-green: var(--accent-green);
+  --color-accent-orange: var(--accent-orange);
+  --color-accent-gold: var(--accent-gold);
+  --font-heading: 'Playfair Display', serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+body {
+  background: var(--bg-white);
+  color: var(--font-primary);
+  font-family: 'Inter', sans-serif;
+}
+
+.gradient-rainbow {
+  background: linear-gradient(90deg, #D6246E 0%, #7B2FA0 17%, #1565C0 33%, #0EA5A5 50%, #78BE20 67%, #E86B20 83%, #D4941A 100%);
+}
+
+.gradient-btn-primary {
+  background: linear-gradient(90deg, #D6246E 0%, #1565C0 100%);
+}
+
+.gradient-border-teal-blue {
+  background: linear-gradient(90deg, #0EA5A5 0%, #1565C0 100%);
+}
+
+/* react-datepicker overrides */
+.react-datepicker {
+  font-family: 'Inter', sans-serif !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+}
+.react-datepicker__header {
+  background: var(--bg-light) !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+.react-datepicker__current-month {
+  color: var(--font-primary) !important;
+  font-weight: 600 !important;
+}
+.react-datepicker__day-name {
+  color: var(--font-muted) !important;
+}
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background: var(--accent-pink) !important;
+  border-radius: 8px !important;
+}
+.react-datepicker__day:hover {
+  background: var(--bg-light) !important;
+  border-radius: 8px !important;
+}
+.react-datepicker__navigation-icon::before {
+  border-color: var(--font-secondary) !important;
+}

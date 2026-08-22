@@ -1,0 +1,17 @@
+rules_version = '2';
+
+// Package images are uploaded server-side via the Admin SDK (which bypasses
+// these rules), so browsers only ever need read access.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    match /packages/{imageId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
