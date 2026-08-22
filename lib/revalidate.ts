@@ -11,6 +11,14 @@ import { PUBLIC_SITE_URL } from '@/lib/site';
 
 const secret = process.env.REVALIDATE_SECRET;
 
+/**
+ * Whether this app can refresh the public site, for showing on the dashboard.
+ * Deliberately reports only presence, never the secret value.
+ */
+export function getRevalidateConfig(): { targetUrl: string; secretConfigured: boolean } {
+  return { targetUrl: PUBLIC_SITE_URL, secretConfigured: Boolean(secret) };
+}
+
 export interface RevalidateResult {
   ok: boolean;
   /** Populated when the public site couldn't be refreshed. */

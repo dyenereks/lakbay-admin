@@ -3,12 +3,14 @@ import { Package, Phone, ArrowRight } from 'lucide-react';
 import { getAllPackages } from '@/lib/packages-data';
 import { getSiteSettings } from '@/lib/settings-data';
 import { isAdminConfigured, getAdminInitError } from '@/lib/firebase/admin';
+import { getRevalidateConfig } from '@/lib/revalidate';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboard() {
   const [packages, settings] = await Promise.all([getAllPackages(), getSiteSettings()]);
   const initError = getAdminInitError();
+  const revalidate = getRevalidateConfig();
   const liveCount = packages.filter((pkg) => pkg.published).length;
   const draftCount = packages.length - liveCount;
 
@@ -68,6 +70,25 @@ export default async function AdminDashboard() {
           </p>
         )
       )}
+
+      {!revalidate.secretConfigured && (
+        <p
+          className="text-[13px] text-accent-orange bg-accent-orange/10 rounded-[8px] p-4 leading-relaxed"
+          style={{ fontFamily: 'var(--font-body)' }}
+        >
+          <strong>REVALIDATE_SECRET is not set here.</strong> Saving will store your changes, but the
+          public site won&apos;t refresh — edits will only appear on its next deploy. Set this to the
+          same value as the <code>REVALIDATE_SECRET</code> on {revalidate.targetUrl}.
+        </p>
+      )}
+
+      <p
+        className="text-[12px] text-font-muted"
+        style={{ fontFamily: 'var(--font-body)' }}
+      >
+        Publishing to <strong>{revalidate.targetUrl}</strong> · refresh hook{' '}
+        {revalidate.secretConfigured ? 'configured' : 'not configured'}
+      </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         {sections.map((section) => {
