@@ -9,7 +9,9 @@ import { PUBLIC_SITE_URL } from '@/lib/site';
  * the public app exposes, authenticated with a shared secret.
  */
 
-const secret = process.env.REVALIDATE_SECRET;
+// Trimmed to match the public endpoint: a trailing newline picked up when
+// pasting into a hosting dashboard would otherwise cause a 401 on every save.
+const secret = process.env.REVALIDATE_SECRET?.trim();
 
 /**
  * Whether this app can refresh the public site, for showing on the dashboard.
@@ -53,7 +55,10 @@ export async function revalidatePublicSite(
 
     if (!response.ok) {
       const detail = await response.text().catch(() => '');
-      const warning = `The public site rejected the refresh (${response.status}). ${detail}`.trim();
+      const warning =
+        response.status === 401
+          ? 'The public site rejected the credential (401). REVALIDATE_SECRET must be set to the same value on both this admin and the public site.'
+          : `The public site rejected the refresh (${response.status}). ${detail}`.trim();
       console.error('[revalidate]', warning);
       return { ok: false, warning };
     }
