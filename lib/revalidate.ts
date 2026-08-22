@@ -21,6 +21,47 @@ export function getRevalidateConfig(): { targetUrl: string; secretConfigured: bo
   return { targetUrl: PUBLIC_SITE_URL, secretConfigured: Boolean(secret) };
 }
 
+/**
+ * Only follow a redirect that stays on the same site (apex <-> www, or a
+ * subdomain of the same host). Re-attaching credentials to an arbitrary
+ * redirect target would leak the secret to whoever controls it.
+ */
+function isSameSiteRedirect(from: URL, to: URL): boolean {
+  if (to.protocol !== 'https:') return false;
+  const bare = (host: string) => host.replace(/^www\./i, '').toLowerCase();
+  return bare(from.hostname) === bare(to.hostname);
+}
+
+/**
+ * fetch() drops the Authorization header when it follows a redirect to another
+ * host — so pointing this app at the apex domain when the site canonicalises to
+ * www means the token silently never arrives, and the public site reports the
+ * request as unauthenticated.
+ *
+ * Handle the redirect explicitly and re-send the header to the canonical host,
+ * reporting where it ended up so the misconfiguration can be fixed properly.
+ */
+async function authedFetch(
+  url: string,
+  init: RequestInit
+): Promise<{ response: Response; redirectedTo?: string }> {
+  const first = await fetch(url, { ...init, redirect: 'manual' });
+
+  if (first.status >= 300 && first.status < 400) {
+    const location = first.headers.get('location');
+    if (location) {
+      const target = new URL(location, url);
+      if (isSameSiteRedirect(new URL(url), target)) {
+        const response = await fetch(target.toString(), { ...init, redirect: 'manual' });
+        return { response, redirectedTo: target.origin };
+      }
+      return { response: first, redirectedTo: target.origin };
+    }
+  }
+
+  return { response: first };
+}
+
 export interface RevalidateResult {
   ok: boolean;
   /** Populated when the public site couldn't be refreshed. */
@@ -43,7 +84,7 @@ export async function revalidatePublicSite(
   }
 
   try {
-    const response = await fetch(`${PUBLIC_SITE_URL}/api/revalidate`, {
+    const { response } = await authedFetch(`${PUBLIC_SITE_URL}/api/revalidate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -104,11 +145,14 @@ export async function checkPublicSiteConnection(): Promise<ConnectionCheck> {
   }
 
   try {
-    const response = await fetch(`${PUBLIC_SITE_URL}/api/revalidate`, {
+    const { response, redirectedTo } = await authedFetch(`${PUBLIC_SITE_URL}/api/revalidate`, {
       method: 'GET',
       headers: { Authorization: `Bearer ${secret}` },
       cache: 'no-store',
     });
+    const redirectNote = redirectedTo
+      ? ` Note: ${PUBLIC_SITE_URL} redirects to ${redirectedTo} — set NEXT_PUBLIC_PUBLIC_SITE_URL to ${redirectedTo} so requests aren't redirected.`
+      : '';
 
     // A site that predates the check endpoint answers 405/404 rather than JSON.
     const result = await response.json().catch(() => null);
@@ -132,20 +176,20 @@ export async function checkPublicSiteConnection(): Promise<ConnectionCheck> {
     }
 
     if (!result.authenticated) {
-      return {
-        ...base,
-        ok: false,
-        publicConfigured: true,
-        message:
-          'Both sites have a secret, but they do not match. Set REVALIDATE_SECRET to the same value on each.',
-      };
+      // 'no-token' means the header never arrived — almost always a redirect
+      // stripping it, not a wrong secret.
+      const message =
+        result.reason === 'no-token'
+          ? `The public site received no credential, so the request was redirected and the Authorization header was dropped.${redirectNote || ' Check NEXT_PUBLIC_PUBLIC_SITE_URL points at the canonical domain.'}`
+          : `Both sites have a secret, but they do not match. Set REVALIDATE_SECRET to the same value on each.${redirectNote}`;
+      return { ...base, ok: false, publicConfigured: true, message };
     }
 
     return {
       ...base,
       ok: true,
       publicConfigured: true,
-      message: 'Connected — saves will refresh the public site.',
+      message: `Connected — saves will refresh the public site.${redirectNote}`,
     };
   } catch (error) {
     return {

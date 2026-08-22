@@ -45,6 +45,8 @@ Instead, `lib/revalidate.ts` POSTs the changed paths to the public site's `/api/
 
 It never throws — a failed refresh returns `{ ok: false, warning }`, which the routes pass back in the JSON response so a save isn't reported as a failure when the content did save. The forms surface that warning; don't discard it.
 
+**`NEXT_PUBLIC_PUBLIC_SITE_URL` must be the canonical domain.** `fetch` drops the `Authorization` header when it follows a redirect to another host, so pointing at the apex when the site canonicalises to `www` means the token silently never arrives and the public site reports the call as unauthenticated. `authedFetch()` now re-issues same-site redirects with the header re-attached and reports the redirect, but fixing the URL avoids the extra round trip.
+
 `checkPublicSiteConnection()` verifies the link without changing anything, exposed at `GET /api/revalidate-check` (signed-in admins only) and wired to the dashboard's **Test connection** button. It separates the failure modes that all look alike from a save: no secret here, no secret on the public site, secrets that don't match, and the site being unreachable.
 
 ## Shared code
