@@ -26,6 +26,10 @@ export default function PublishToggle({
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? 'Could not update.');
+      // Status changed, but the public site may still serve the old version.
+      if (result.warning) {
+        setError(`Status saved, but the site wasn't refreshed: ${result.warning}`);
+      }
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not update.');

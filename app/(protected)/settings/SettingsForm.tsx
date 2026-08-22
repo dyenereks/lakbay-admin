@@ -56,6 +56,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Sit
   const router = useRouter();
   const [form, setForm] = useState<SiteSettings>(initialSettings);
   const [error, setError] = useState<string | null>(null);
+  const [savedWarning, setSavedWarning] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -82,6 +83,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Sit
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
+    setSavedWarning(null);
     setSaved(false);
     setIsSaving(true);
 
@@ -95,6 +97,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Sit
       if (!response.ok) throw new Error(result.error ?? 'Save failed.');
 
       setSaved(true);
+      if (result.warning) setSavedWarning(result.warning);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Save failed.');
@@ -144,6 +147,13 @@ export default function SettingsForm({ initialSettings }: { initialSettings: Sit
 
         {error && (
           <p className="text-[13px] text-accent-pink bg-accent-pink/10 rounded-[8px] p-3">{error}</p>
+        )}
+
+        {savedWarning && (
+          <p className="text-[13px] text-accent-orange bg-accent-orange/10 rounded-[8px] p-3 leading-relaxed">
+            <strong>Saved — but the public site wasn&apos;t refreshed.</strong> Your change is stored
+            and will appear on the site&apos;s next deploy. {savedWarning}
+          </p>
         )}
       </div>
 

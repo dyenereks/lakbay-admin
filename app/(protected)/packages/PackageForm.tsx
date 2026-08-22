@@ -172,6 +172,8 @@ export default function PackageForm({
   const router = useRouter();
   const [form, setForm] = useState<TourPackage>(initialPackage ?? EMPTY_PACKAGE);
   const [error, setError] = useState<string | null>(null);
+  /** Set when the save succeeded but the public site wasn't refreshed. */
+  const [savedWarning, setSavedWarning] = useState<string | null>(null);
   /** Which button is mid-save, so only that one shows a spinner label. */
   const [savingAs, setSavingAs] = useState<'draft' | 'publish' | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -206,6 +208,7 @@ export default function PackageForm({
 
   async function save(published: boolean) {
     setError(null);
+    setSavedWarning(null);
     setSavingAs(published ? 'publish' : 'draft');
 
     try {
@@ -229,6 +232,15 @@ export default function PackageForm({
 
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? 'Save failed.');
+
+      // The package saved, but the public site couldn't be refreshed. Stay put
+      // and say so — silently navigating away looks like a clean success while
+      // the live site keeps serving the old content.
+      if (result.warning) {
+        setSavedWarning(result.warning);
+        setSavingAs(null);
+        return;
+      }
 
       router.push('/packages');
       router.refresh();
@@ -351,6 +363,13 @@ export default function PackageForm({
         {/* Inside the sticky bar so a failed save is visible from anywhere in the form. */}
         {error && (
           <p className="text-[13px] text-accent-pink bg-accent-pink/10 rounded-[8px] p-3">{error}</p>
+        )}
+
+        {savedWarning && (
+          <p className="text-[13px] text-accent-orange bg-accent-orange/10 rounded-[8px] p-3 leading-relaxed">
+            <strong>Saved — but the public site wasn&apos;t refreshed.</strong> Your change is stored
+            and will appear on the site&apos;s next deploy. {savedWarning}
+          </p>
         )}
       </div>
 
