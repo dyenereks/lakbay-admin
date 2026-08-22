@@ -72,3 +72,89 @@ export async function revalidatePublicSite(
     return { ok: false, warning };
   }
 }
+
+export interface ConnectionCheck {
+  ok: boolean;
+  /** Whether this admin has a secret configured at all. */
+  adminConfigured: boolean;
+  /** Whether the public site has one configured. */
+  publicConfigured: boolean;
+  targetUrl: string;
+  message: string;
+}
+
+/**
+ * Verify the refresh link to the public site without changing anything.
+ *
+ * Distinguishes the failure modes that all look identical from a save: no
+ * secret here, no secret there, the two not matching, or the site being
+ * unreachable.
+ */
+export async function checkPublicSiteConnection(): Promise<ConnectionCheck> {
+  const base = { targetUrl: PUBLIC_SITE_URL, adminConfigured: Boolean(secret) };
+
+  if (!secret) {
+    return {
+      ...base,
+      ok: false,
+      publicConfigured: false,
+      message:
+        'REVALIDATE_SECRET is not set on this admin, so saves cannot refresh the public site.',
+    };
+  }
+
+  try {
+    const response = await fetch(`${PUBLIC_SITE_URL}/api/revalidate`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${secret}` },
+      cache: 'no-store',
+    });
+
+    // A site that predates the check endpoint answers 405/404 rather than JSON.
+    const result = await response.json().catch(() => null);
+
+    if (!result || typeof result.configured !== 'boolean') {
+      return {
+        ...base,
+        ok: false,
+        publicConfigured: false,
+        message: `The public site did not return a valid response (HTTP ${response.status}). It may not have the check endpoint deployed yet.`,
+      };
+    }
+
+    if (!result.configured) {
+      return {
+        ...base,
+        ok: false,
+        publicConfigured: false,
+        message: 'REVALIDATE_SECRET is not set on the public site.',
+      };
+    }
+
+    if (!result.authenticated) {
+      return {
+        ...base,
+        ok: false,
+        publicConfigured: true,
+        message:
+          'Both sites have a secret, but they do not match. Set REVALIDATE_SECRET to the same value on each.',
+      };
+    }
+
+    return {
+      ...base,
+      ok: true,
+      publicConfigured: true,
+      message: 'Connected — saves will refresh the public site.',
+    };
+  } catch (error) {
+    return {
+      ...base,
+      ok: false,
+      publicConfigured: false,
+      message: `Could not reach the public site: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    };
+  }
+}

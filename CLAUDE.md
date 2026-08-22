@@ -43,7 +43,9 @@ No `/admin` prefix — this app *is* the admin.
 
 Instead, `lib/revalidate.ts` POSTs the changed paths to the public site's `/api/revalidate`, authenticated with a shared `REVALIDATE_SECRET` that must be **identical in both projects**. Any new write path must call `revalidatePublicSite()`, or edits won't appear until the public site's next deploy.
 
-It never throws — a failed refresh returns `{ ok: false, warning }`, which the routes pass back in the JSON response so a save isn't reported as a failure when the content did save.
+It never throws — a failed refresh returns `{ ok: false, warning }`, which the routes pass back in the JSON response so a save isn't reported as a failure when the content did save. The forms surface that warning; don't discard it.
+
+`checkPublicSiteConnection()` verifies the link without changing anything, exposed at `GET /api/revalidate-check` (signed-in admins only) and wired to the dashboard's **Test connection** button. It separates the failure modes that all look alike from a save: no secret here, no secret on the public site, secrets that don't match, and the site being unreachable.
 
 ## Shared code
 
