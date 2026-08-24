@@ -47,7 +47,9 @@ It never throws — a failed refresh returns `{ ok: false, warning }`, which the
 
 **`NEXT_PUBLIC_PUBLIC_SITE_URL` must be the canonical domain.** `fetch` drops the `Authorization` header when it follows a redirect to another host, so pointing at the apex when the site canonicalises to `www` means the token silently never arrives and the public site reports the call as unauthenticated. `authedFetch()` now re-issues same-site redirects with the header re-attached and reports the redirect, but fixing the URL avoids the extra round trip.
 
-`checkPublicSiteConnection()` verifies the link without changing anything, exposed at `GET /api/revalidate-check` (signed-in admins only) and wired to the dashboard's **Test connection** button. It separates the failure modes that all look alike from a save: no secret here, no secret on the public site, secrets that don't match, and the site being unreachable.
+`checkPublicSiteConnection()` verifies the link without changing anything, exposed at `GET /api/revalidate-check` (signed-in admins only). It separates the failure modes that all look alike from a save: no secret here, no secret on the public site, secrets that don't match, and the site being unreachable.
+
+The **Test connection** button is currently hidden from the dashboard. Nothing else was removed — the endpoint and `app/(protected)/ConnectionCheck.tsx` are intact, so re-enabling it means importing that component and rendering it in `app/(protected)/page.tsx` (see the comment there).
 
 ## Shared code
 

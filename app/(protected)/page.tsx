@@ -4,7 +4,6 @@ import { getAllPackages } from '@/lib/packages-data';
 import { getSiteSettings } from '@/lib/settings-data';
 import { isAdminConfigured, getAdminInitError } from '@/lib/firebase/admin';
 import { getRevalidateConfig } from '@/lib/revalidate';
-import ConnectionCheck from './ConnectionCheck';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,13 +82,15 @@ export default async function AdminDashboard() {
         </p>
       )}
 
-      <div className="flex flex-col gap-2">
-        <p className="text-[12px] text-font-muted" style={{ fontFamily: 'var(--font-body)' }}>
-          Publishing to <strong>{revalidate.targetUrl}</strong> · refresh hook{' '}
-          {revalidate.secretConfigured ? 'configured' : 'not configured'}
-        </p>
-        <ConnectionCheck />
-      </div>
+      {/*
+        The "Test connection" button is hidden for now. The functionality is
+        intact — GET /api/revalidate-check still works, and re-enabling the
+        button is just importing ./ConnectionCheck and rendering it here.
+      */}
+      <p className="text-[12px] text-font-muted" style={{ fontFamily: 'var(--font-body)' }}>
+        Publishing to <strong>{revalidate.targetUrl}</strong> · refresh hook{' '}
+        {revalidate.secretConfigured ? 'configured' : 'not configured'}
+      </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         {sections.map((section) => {
