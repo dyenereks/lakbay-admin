@@ -51,6 +51,12 @@ It never throws — a failed refresh returns `{ ok: false, warning }`, which the
 
 The **Test connection** button is currently hidden from the dashboard. Nothing else was removed — the endpoint and `app/(protected)/ConnectionCheck.tsx` are intact, so re-enabling it means importing that component and rendering it in `app/(protected)/page.tsx` (see the comment there).
 
+## Loading states
+
+Every route in `(protected)` is `force-dynamic` and reads Firestore, so a navigation is a real server round trip. `loading.tsx` files give an instant skeleton instead of the click appearing to do nothing: one per shape at `(protected)/`, `(protected)/packages/` and `(protected)/settings/`. Keep them roughly matching their page's layout so the swap to real content doesn't jump.
+
+**Page tint goes on a wrapper, never `<body>`.** `globals.css` sets `body { background: var(--bg-white) }` *unlayered*, and an unlayered rule beats Tailwind's layered utilities — so `bg-bg-light` on `<body>` is silently ignored. The root layout wraps children in a `min-h-screen bg-bg-light` div instead.
+
 ## Shared code
 
 `lib/site.ts`, `lib/packages.ts`, `lib/packages-data.ts`, `lib/settings-data.ts` and `lib/firebase/admin.ts` are **duplicated** in the public repo. There's no shared package. If you change the `TourPackage` shape, the Firestore document layout, or `SiteSettings`, update `../lakbay` to match or the public site will misread the data.

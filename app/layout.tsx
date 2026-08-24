@@ -32,8 +32,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${playfairDisplay.variable} ${inter.variable} antialiased bg-bg-light`}>
-        {children}
+      <body className={`${playfairDisplay.variable} ${inter.variable} antialiased`}>
+        {/*
+          The page tint goes on a wrapper, not <body>: globals.css sets
+          `body { background: var(--bg-white) }` unlayered, and an unlayered rule
+          beats Tailwind's layered utilities, so `bg-bg-light` on <body> is
+          silently ignored.
+        */}
+        <div className="min-h-screen bg-bg-light">{children}</div>
       </body>
     </html>
   );
