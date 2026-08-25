@@ -32,6 +32,7 @@ No `/admin` prefix — this app *is* the admin.
   - `/` dashboard → links to the two sections
   - `/packages`, `/packages/new`, `/packages/[slug]`
   - `/settings` — Facebook URL, phone numbers, office address
+  - `/profile` — signed-in account and password change, linked from the header
 - `app/api/session` — POST creates the httpOnly session cookie from a Firebase ID token, DELETE signs out.
 - `app/api/packages` — POST/PUT/PATCH/DELETE. Re-validates every field server-side, rejects `RESERVED_SLUGS`, handles slug renames.
 - `app/api/settings` — PUT contact details.
@@ -50,6 +51,14 @@ It never throws — a failed refresh returns `{ ok: false, warning }`, which the
 `checkPublicSiteConnection()` verifies the link without changing anything, exposed at `GET /api/revalidate-check` (signed-in admins only). It separates the failure modes that all look alike from a save: no secret here, no secret on the public site, secrets that don't match, and the site being unreachable.
 
 The **Test connection** button is currently hidden from the dashboard. Nothing else was removed — the endpoint and `app/(protected)/ConnectionCheck.tsx` are intact, so re-enabling it means importing that component and rendering it in `app/(protected)/page.tsx` (see the comment there).
+
+## Password changes
+
+`/profile` changes the password **entirely client-side** via the Firebase SDK — reauthenticate (or sign in fresh when the client SDK has no user) with the current password, then `updatePassword`. The password never reaches our server, and no route accepts one; keep it that way.
+
+Afterwards it mints a fresh session cookie via `POST /api/session`. `updatePassword` revokes existing refresh tokens and `getAdminSession()` verifies with `checkRevoked: true`, so skipping that step signs the admin out on their next navigation.
+
+The email is deliberately read-only: changing it would also mean updating the `ADMIN_EMAILS` allowlist, so it stays a Firebase console job.
 
 ## Loading states
 

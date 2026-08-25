@@ -46,7 +46,14 @@ export default async function ProtectedAdminLayout({
             >
               View site
             </a>
-            <span className="text-[13px] text-font-muted hidden md:inline">{session.email}</span>
+            {/* Shows the email where there's room, stays reachable when there isn't. */}
+            <Link
+              href="/profile"
+              className="text-[13px] text-font-muted hover:text-primary-teal transition-colors"
+            >
+              <span className="hidden md:inline">{session.email}</span>
+              <span className="md:hidden">Profile</span>
+            </Link>
             <SignOutButton />
           </div>
         </div>
