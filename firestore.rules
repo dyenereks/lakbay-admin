@@ -18,6 +18,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // The admin allowlist. Server-only for the same reason, and letting a
+    // browser write here would be a privilege-escalation hole.
+    match /admins/{email} {
+      allow read, write: if false;
+    }
+
     // Everything else is closed by default.
     match /{document=**} {
       allow read, write: if false;

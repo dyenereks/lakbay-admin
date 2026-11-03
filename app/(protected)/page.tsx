@@ -1,14 +1,21 @@
 import Link from 'next/link';
-import { Package, Phone, ArrowRight } from 'lucide-react';
+import { Package, Phone, Users, UserCog, ArrowRight } from 'lucide-react';
 import { getAllPackages } from '@/lib/packages-data';
 import { getSiteSettings } from '@/lib/settings-data';
 import { isAdminConfigured, getAdminInitError } from '@/lib/firebase/admin';
 import { getRevalidateConfig } from '@/lib/revalidate';
+import { getAdminSession } from '@/lib/auth';
+import { listAdmins } from '@/lib/admins-data';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboard() {
-  const [packages, settings] = await Promise.all([getAllPackages(), getSiteSettings()]);
+  const [packages, settings, admins, session] = await Promise.all([
+    getAllPackages(),
+    getSiteSettings(),
+    listAdmins(),
+    getAdminSession(),
+  ]);
   const initError = getAdminInitError();
   const revalidate = getRevalidateConfig();
   const liveCount = packages.filter((pkg) => pkg.published).length;
@@ -32,6 +39,24 @@ export default async function AdminDashboard() {
       summary: `${settings.phones.length} number${settings.phones.length === 1 ? '' : 's'}`,
       accent: 'linear-gradient(90deg, #0EA5A5 0%, #78BE20 50%, #D4941A 100%)',
       iconColor: '#0EA5A5',
+    },
+    {
+      href: '/admins',
+      icon: Users,
+      title: 'Admin users',
+      description: 'Invite someone to manage the site, or revoke access.',
+      summary: `${admins.length} admin${admins.length === 1 ? '' : 's'}`,
+      accent: 'linear-gradient(90deg, #7B2FA0 0%, #1565C0 50%, #0EA5A5 100%)',
+      iconColor: '#7B2FA0',
+    },
+    {
+      href: '/profile',
+      icon: UserCog,
+      title: 'Your profile',
+      description: 'Change your password.',
+      summary: session?.email ?? '',
+      accent: 'linear-gradient(90deg, #E86B20 0%, #D4941A 50%, #78BE20 100%)',
+      iconColor: '#E86B20',
     },
   ];
 
@@ -110,8 +135,9 @@ export default async function AdminDashboard() {
                   <Icon size={22} color={section.iconColor} />
                 </div>
                 <span
-                  className="text-[12px] font-semibold text-font-muted bg-bg-light rounded-full px-3 py-1"
+                  className="text-[12px] font-semibold text-font-muted bg-bg-light rounded-full px-3 py-1 max-w-[55%] truncate"
                   style={{ fontFamily: 'var(--font-body)' }}
+                  title={section.summary}
                 >
                   {section.summary}
                 </span>

@@ -32,7 +32,8 @@ No `/admin` prefix — this app *is* the admin.
   - `/` dashboard → links to the two sections
   - `/packages`, `/packages/new`, `/packages/[slug]`
   - `/settings` — Facebook URL, phone numbers, office address
-  - `/profile` — signed-in account and password change, linked from the header
+  - `/profile` — signed-in account and password change, linked from the header and the dashboard
+  - `/admins` — invite and remove admin users
 - `app/api/session` — POST creates the httpOnly session cookie from a Firebase ID token, DELETE signs out.
 - `app/api/packages` — POST/PUT/PATCH/DELETE. Re-validates every field server-side, rejects `RESERVED_SLUGS`, handles slug renames.
 - `app/api/settings` — PUT contact details.
@@ -51,6 +52,16 @@ It never throws — a failed refresh returns `{ ok: false, warning }`, which the
 `checkPublicSiteConnection()` verifies the link without changing anything, exposed at `GET /api/revalidate-check` (signed-in admins only). It separates the failure modes that all look alike from a save: no secret here, no secret on the public site, secrets that don't match, and the site being unreachable.
 
 The **Test connection** button is currently hidden from the dashboard. Nothing else was removed — the endpoint and `app/(protected)/ConnectionCheck.tsx` are intact, so re-enabling it means importing that component and rendering it in `app/(protected)/page.tsx` (see the comment there).
+
+## Who can sign in
+
+The allowlist lives in the Firestore **`admins`** collection (`lib/admins-data.ts`), not in an env var — `ADMIN_EMAILS` couldn't be edited from the UI without a redeploy.
+
+`ADMIN_EMAILS` is kept as a **bootstrap**: those addresses are always allowed, can't be removed in-app, and are what stops an empty or broken collection locking everyone out. Keep at least one set. With both the bootstrap and the collection empty the admin stays open to any Firebase account — that was the behaviour before the collection existed, and tightening it on an empty project would lock out the only person who could fix it. `/admins` warns when that's the case.
+
+`isEmailAllowed()` is **async** now (it reads Firestore) and is checked on every `getAdminSession()`, so removing someone takes effect on their next request rather than when their 14-day cookie expires.
+
+Inviting creates the Firebase Auth account with a random password nobody sees, then the client sends Firebase's own password-reset email so the invitee chooses their own. Removal guards in `app/api/admins/route.ts`: you can't remove yourself, a bootstrap address, or the last remaining admin.
 
 ## Password changes
 

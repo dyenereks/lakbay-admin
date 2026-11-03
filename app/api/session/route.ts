@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   try {
     const decoded = await auth.verifyIdToken(idToken, true);
 
-    if (!isEmailAllowed(decoded.email)) {
+    if (!(await isEmailAllowed(decoded.email))) {
       return NextResponse.json({ error: 'This account is not authorized.' }, { status: 403 });
     }
 

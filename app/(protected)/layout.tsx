@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { UserCog } from 'lucide-react';
 import { getAdminSession } from '@/lib/auth';
 import { PUBLIC_SITE_URL } from '@/lib/site';
 import SignOutButton from './SignOutButton';
@@ -46,12 +47,17 @@ export default async function ProtectedAdminLayout({
             >
               View site
             </a>
-            {/* Shows the email where there's room, stays reachable when there isn't. */}
+            {/*
+              Was plain muted text, which nobody read as a link — hence "where do
+              I change my password?". Give it an icon and a border so it reads as
+              a control, and show the email only where there's room for it.
+            */}
             <Link
               href="/profile"
-              className="text-[13px] text-font-muted hover:text-primary-teal transition-colors"
+              className="flex items-center gap-2 text-[13px] text-font-secondary border border-border-light rounded-full px-3 py-1.5 hover:border-primary-teal hover:text-primary-teal transition-colors max-w-[220px]"
             >
-              <span className="hidden md:inline">{session.email}</span>
+              <UserCog size={14} className="shrink-0" />
+              <span className="hidden md:inline truncate">{session.email}</span>
               <span className="md:hidden">Profile</span>
             </Link>
             <SignOutButton />

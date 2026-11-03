@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { getAdminAuth } from '@/lib/firebase/admin';
+import { isAdminEmail } from '@/lib/admins-data';
 
 export const SESSION_COOKIE = 'lakbay_session';
 /** Firebase session cookies max out at 14 days. */
@@ -11,22 +12,12 @@ export interface AdminSession {
 }
 
 /**
- * Emails allowed into the admin. Empty means "any account that exists in this
- * Firebase project", which is fine when you create users by hand — but setting
- * ADMIN_EMAILS is the safer default.
+ * Whether an address may sign in. Async because the allowlist lives in
+ * Firestore now (see lib/admins-data.ts) so admins can be managed from the UI;
+ * ADMIN_EMAILS still acts as an always-allowed bootstrap.
  */
-function allowedEmails(): string[] {
-  return (process.env.ADMIN_EMAILS ?? '')
-    .split(',')
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-export function isEmailAllowed(email: string | undefined): boolean {
-  if (!email) return false;
-  const allowed = allowedEmails();
-  if (allowed.length === 0) return true;
-  return allowed.includes(email.toLowerCase());
+export async function isEmailAllowed(email: string | undefined): Promise<boolean> {
+  return isAdminEmail(email);
 }
 
 /**
@@ -43,7 +34,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   try {
     // checkRevoked: a disabled or signed-out user loses access immediately.
     const decoded = await auth.verifySessionCookie(cookie, true);
-    if (!isEmailAllowed(decoded.email)) return null;
+    if (!(await isEmailAllowed(decoded.email))) return null;
     return { uid: decoded.uid, email: decoded.email ?? '' };
   } catch {
     return null;
